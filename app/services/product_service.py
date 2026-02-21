@@ -1,3 +1,4 @@
+from operator import countOf
 from app.logic import sort_products
 from app.core.logger import logger
 
@@ -39,3 +40,7 @@ def get_filtered_products(request_id, products, min_id, sort_by_id, name_contain
     
     logger.info(f"[{request_id}] {len(filtered)} products returned")
     return filtered
+
+def products_count(request_id,products):
+    count = len(products)
+    return {"count": count}

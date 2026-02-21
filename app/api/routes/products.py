@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, Path, Request
 from app.schemas.product_schema import Product
-from app.services.product_service import get_filtered_products, get_singleproduct_by_id
+from app.services.product_service import get_filtered_products, get_singleproduct_by_id, products_count
 from app.core.logger import logger
 
 router = APIRouter()
@@ -14,6 +14,13 @@ products = [
     Product(id=6, name = 'Tsukasa', Strengths = 'Strength and Skilled Fighter')
 ]
 
+@router.get("/products/count")
+def get_product_count(request: Request):
+
+    request_id=request.state.request_id
+    count = products_count(request_id,products)
+
+    return count
 
 @router.get('/products/{id}', responses={ 404: {"description": "Record not found"}})
 def get_product_by_id(request: Request, id: int = Path(description="The unique ID of the product to retrieve")):
@@ -44,3 +51,4 @@ def get_products(
     filtered = get_filtered_products(request_id, products, min_id, sort_by_id, name_contains, limit, offset)
 
     return filtered
+
