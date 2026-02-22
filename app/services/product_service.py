@@ -2,10 +2,10 @@ from operator import countOf
 from app.logic import sort_products
 from app.core.logger import logger
 
-class InvalidIdException(Exception):
+class NoProductFoundException(Exception):
     pass
 
-class NoProductFoundException(Exception):
+class InvalidInputException(Exception):
     pass
 
 
@@ -16,7 +16,7 @@ def get_singleproduct_by_id(request_id, products, id):
 
     if id is not None and id < 1:
         logger.warning('id should be equal to or greater than one.')
-        raise InvalidIdException("Invalid id recieved. id should be equal to or greater than one.")
+        raise InvalidInputException("Invalid id recieved. id should be equal to or greater than one.")
 
     for product in products:
         if product.id==id:
@@ -30,8 +30,16 @@ def get_filtered_products(request_id, products, min_id, sort_by_id, name_contain
 
     if min_id is not None and min_id < 1:
         logger.warning("Invalid min_id value received")
-        raise InvalidIdException("Invalid min_id. Please try again with the approriate min_id value.")
+        raise InvalidInputException("Invalid min_id. Please try again with the approriate min_id value.")
     
+    if limit is not None and limit < 1:
+        logger.warning("Invalid Limit value recieved")
+        raise InvalidInputException("Invalid limit value recieved. Limit value must be equal to or greater than 1")
+
+    if offset is not None and offset < 0:
+        logger.warning("Invalid offset value recieved")
+        raise InvalidInputException("Invalid offset value recieved. Offset value must be equal to or greater than 0")
+
     filtered = sort_products(products, min_id, sort_by_id, name_contains, limit, offset)
 
     if not filtered:

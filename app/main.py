@@ -3,7 +3,7 @@ from app.api.routes import products, health
 from app.core.logger import logger
 import time
 from fastapi.responses import JSONResponse
-from app.services.product_service import InvalidIdException, NoProductFoundException
+from app.services.product_service import InvalidInputException, NoProductFoundException
 import traceback
 import uuid
 
@@ -37,8 +37,8 @@ async def global_exception_handler(request: Request, exc: Exception):
         content= {"detail": "Internal Server Crash"}
         )
 
-@app.exception_handler(InvalidIdException)
-async def invalid_id_exception_handler(request: Request, exc: InvalidIdException):
+@app.exception_handler(InvalidInputException)
+async def invalid_input_exception_handler(request: Request, exc: InvalidInputException):
     return JSONResponse(
         status_code=400,
         content={"detail": str(exc)}
