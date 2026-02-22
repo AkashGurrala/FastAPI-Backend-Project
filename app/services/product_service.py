@@ -51,5 +51,5 @@ def get_filtered_products(request_id, products, min_id, sort_by_id, name_contain
 
 def products_count(request_id,products):
     count = len(products)
-    logger.info(f"[{request_id} Count: {count}")
-    return {"Count": count}
+    logger.info(f"[{request_id}] Count: {count}")
+    return {"count": count}
