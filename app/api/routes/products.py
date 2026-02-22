@@ -18,6 +18,7 @@ products = [
 def get_product_count(request: Request):
 
     request_id=request.state.request_id
+    logger.info(f"[{request_id}] Route: Fetching total count of products")
     count = products_count(request_id,products)
 
     return count
