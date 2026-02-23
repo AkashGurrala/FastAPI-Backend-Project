@@ -21,18 +21,19 @@ def get_product_count(request: Request):
     logger.info(f"[{request_id}] Route: Fetching total count of products")
     count = products_count(request_id,products)
 
-    return count
+    return {"status": "success",
+            "data" : count}
 
 @router.get('/products/{id}', responses={ 404: {"description": "Record not found"}})
 def get_product_by_id(request: Request, id: int = Path(description="The unique ID of the product to retrieve")):
     request_id = request.state.request_id
     logger.info(f"[{request_id}] Route: Fetching products")
     product = get_singleproduct_by_id(request_id, products, id)
-    return product
+    return {"status": "success",
+            "data": product}
 
 @router.get(
     "/products",
-    response_model=list[Product],
     responses={
         400: {"description": "Invalid min_id"},
         404: {"description": "Record not found"},
@@ -51,5 +52,6 @@ def get_products(
     logger.info(f"[{request_id}] Route: Fetching products")
     filtered = get_filtered_products(request_id, products, min_id, sort_by_id, name_contains, limit, offset)
 
-    return filtered
+    return {"status": "success",
+            "data": filtered}
 
