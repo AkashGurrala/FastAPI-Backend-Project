@@ -1,10 +1,11 @@
 from pydantic import BaseModel
+from typing import Any
 
 class Product(BaseModel):
     id: int
     name: str
     Strengths: str
 
-class ProductListResponse(BaseModel):
+class BaseResponse(BaseModel):
     status: str
-    data: list[Product]
+    data: Any

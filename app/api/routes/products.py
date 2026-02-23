@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query, Path, Request
-from app.schemas.product_schema import Product, ProductListResponse
+from app.schemas.product_schema import Product, BaseResponse
 from app.services.product_service import get_filtered_products, get_singleproduct_by_id, products_count
 from app.core.logger import logger
 
@@ -34,7 +34,7 @@ def get_product_by_id(request: Request, id: int = Path(description="The unique I
 
 @router.get(
     "/products",
-    response_model=ProductListResponse,
+    response_model=BaseResponse,
     responses={
         400: {"description": "Invalid min_id"},
         404: {"description": "Record not found"},
