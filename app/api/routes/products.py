@@ -1,18 +1,12 @@
 from fastapi import APIRouter, Query, Path, Request
-from app.schemas.product_schema import Product, BaseResponse
-from app.services.product_service import get_filtered_products, get_singleproduct_by_id, products_count
+from app.schemas.product_schema import Product, BaseResponse, ProductCreate
+from app.services.product_service import get_filtered_products, get_singleproduct_by_id, products_count, create_product
 from app.core.logger import logger
+from app.data.store import products
 
 router = APIRouter()
 
-products = [
-    Product(id=1, name = 'Erwin Smith', Strengths='Leadership and Conviction'),
-    Product(id=2, name = 'Gold D Roger', Strengths = 'Freedom and Strength'),
-    Product(id=3, name='Asta', Strengths = 'Hardwork and Optimism'),
-    Product(id=4, name = 'Monkey D Luffy', Strengths = 'Freedom and resilence'),
-    Product(id=5, name = 'Gojo Satoru', Strengths = 'The Strongest'),
-    Product(id=6, name = 'Tsukasa', Strengths = 'Strength and Skilled Fighter')
-]
+
 
 @router.get("/products/count")
 def get_product_count(request: Request):
@@ -56,3 +50,11 @@ def get_products(
     return {"status": "success",
             "data": filtered}
 
+
+@router.post("/products", response_model=BaseResponse)
+def create_new_product(request : Request, product : ProductCreate):
+    request_id = request.state.request_id
+    new_product=create_product(request_id, products, product)
+    
+    return {"status": "Product created successfully",
+            "data": new_product}

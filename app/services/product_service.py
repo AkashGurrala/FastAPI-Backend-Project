@@ -1,6 +1,9 @@
+from hmac import new
 from operator import countOf
 from app.logic import sort_products
 from app.core.logger import logger
+from app.schemas.product_schema import Product
+#from app.api.routes.products import products
 
 class NoProductFoundException(Exception):
     pass
@@ -53,3 +56,22 @@ def products_count(request_id,products):
     count = len(products)
     logger.info(f"[{request_id}] Count: {count}")
     return {"count": count}
+
+def create_product(request_id, products, product):
+    
+    logger.info(f"[{request_id}] Adding new product")
+    product_list = products
+
+    if not product_list:
+        new_id = 1
+    else:
+        new_id= max(p.id for p in product_list) + 1
+
+    new_product = Product(
+        id = new_id,
+        name = product.name,
+        strengths = product.strengths)
+    products.append(new_product)
+    logger.info(f"[{request_id}] Product is created with id = {new_id}")
+    return new_product
+
