@@ -9,3 +9,7 @@ class Product(BaseModel):
 class BaseResponse(BaseModel):
     status: str
     data: Any
+
+class ProductCreate(BaseModel):
+    name: str
+    Strengths: str
