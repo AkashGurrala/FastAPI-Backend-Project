@@ -4,7 +4,7 @@ from typing import Any
 class Product(BaseModel):
     id: int
     name: str
-    Strengths: str
+    strengths: str
 
 class BaseResponse(BaseModel):
     status: str
@@ -12,4 +12,4 @@ class BaseResponse(BaseModel):
 
 class ProductCreate(BaseModel):
     name: str
-    Strengths: str
+    strengths: str
