@@ -1,9 +1,8 @@
-from hmac import new
-from operator import countOf
+from app.api.routes import products
 from app.logic import sort_products
 from app.core.logger import logger
 from app.schemas.product_schema import Product
-#from app.api.routes.products import products
+from app.data.store import products
 
 class NoProductFoundException(Exception):
     pass
@@ -12,7 +11,7 @@ class InvalidInputException(Exception):
     pass
 
 
-def get_singleproduct_by_id(request_id, products, id):
+def get_singleproduct_by_id(request_id, id):
 
     logger.info(f"[{request_id}] Service called with id={id}")
 
@@ -27,7 +26,7 @@ def get_singleproduct_by_id(request_id, products, id):
 
     raise NoProductFoundException("No product found")
 
-def get_filtered_products(request_id, products, min_id, sort_by_id, name_contains, limit, offset):
+def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, offset):
 
     logger.info(f"[{request_id}] Service called with min_id={min_id}, sort_by_id={sort_by_id}, name_contains={name_contains}, limit={limit}, offset={offset}")
 
@@ -52,12 +51,12 @@ def get_filtered_products(request_id, products, min_id, sort_by_id, name_contain
     logger.info(f"[{request_id}] {len(filtered)} products returned")
     return filtered
 
-def products_count(request_id,products):
+def products_count(request_id):
     count = len(products)
     logger.info(f"[{request_id}] Count: {count}")
     return {"count": count}
 
-def create_product(request_id, products, product):
+def create_product(request_id, product):
     
     logger.info(f"[{request_id}] Adding new product")
     product_list = products
@@ -71,7 +70,25 @@ def create_product(request_id, products, product):
         id = new_id,
         name = product.name,
         strengths = product.strengths)
+    
+    for p in products:
+        if p.name.lower() == new_product.name.lower():
+            raise InvalidInputException("Product name already exists")
+
     products.append(new_product)
     logger.info(f"[{request_id}] Product is created with id = {new_id}")
     return new_product
 
+
+def products_search(request_id, name):
+    logger.info(f"[{request_id}] Searching all products that include '{name}' in the name")
+
+    search_list= []
+    for p in products:
+        if name.lower() in p.name.lower():
+            search_list.append(p)
+    
+    if not search_list:
+        raise NoProductFoundException(f"No product found with name: {name}")
+    
+    return search_list
