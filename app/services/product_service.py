@@ -1,7 +1,7 @@
 from app.api.routes import products
 from app.logic import sort_products
 from app.core.logger import logger
-from app.data.store import products, product_by_id, count_products, add_product, search_products
+from app.data.store import get_all_products, product_by_id, count_products, add_product, search_products
 from app.services.exceptions import InvalidInputException, NoProductFoundException
 
 def get_singleproduct_by_id(request_id, id):
@@ -35,7 +35,9 @@ def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, 
         logger.warning("Invalid offset value recieved")
         raise InvalidInputException("Invalid offset value recieved. Offset value must be equal to or greater than 0")
 
-    filtered = sort_products(products, min_id, sort_by_id, name_contains, limit, offset)
+    all_products = get_all_products()
+
+    filtered = sort_products(all_products, min_id, sort_by_id, name_contains, limit, offset)
 
     if not filtered:
         logger.warning("No products found after filtering.")
