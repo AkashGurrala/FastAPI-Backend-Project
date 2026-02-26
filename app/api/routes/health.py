@@ -1,6 +1,7 @@
 import os
 from fastapi  import APIRouter
 from datetime import datetime
+from app.core.config import ENV
 
 router = APIRouter()
 
@@ -10,6 +11,6 @@ def health_check():
         "status": "ok",
         "service": "product-api",
         "version": "0.1",
-        "environment": os.getenv("ENV", "dev"),
+        "environment": ENV,
         "time": datetime.utcnow()
     }

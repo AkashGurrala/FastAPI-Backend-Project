@@ -1,4 +1,3 @@
-from app.api.routes import products
 from app.logic import sort_products
 from app.core.logger import logger
 from app.data.store import get_all_products, product_by_id, count_products, add_product, search_products
@@ -38,10 +37,6 @@ def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, 
     all_products = get_all_products()
 
     filtered = sort_products(all_products, min_id, sort_by_id, name_contains, limit, offset)
-
-    if not filtered:
-        logger.warning("No products found after filtering.")
-        raise NoProductFoundException("Product not found.")
     
     logger.info(f"[{request_id}] {len(filtered)} products returned")
     return filtered
@@ -54,7 +49,13 @@ def products_count(request_id):
 def create_product(request_id, product):
     
     logger.info(f"[{request_id}] Adding new product")
-    new_product = add_product(product)
+    products_list = get_all_products()
+    product.name = product.name.strip()
+    for p in products_list:
+        if p.name.lower() == product.name.lower():
+            raise InvalidInputException("Product name already exists")
+
+    new_product = add_product(request_id, product)
     return new_product
 
 

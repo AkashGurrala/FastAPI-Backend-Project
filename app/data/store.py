@@ -1,5 +1,6 @@
 from app.schemas.product_schema import Product
 from app.services.exceptions import InvalidInputException
+from app.core.logger import logger
 
 products = [
     Product(id=1, name = 'Erwin Smith', strengths='Leadership and Conviction'),
@@ -23,7 +24,7 @@ def count_products():
     count = len(products)
     return count
 
-def add_product(product):
+def add_product(request_id, product):
     
     new_id=len(products)+1
     new_product = Product(
@@ -32,11 +33,9 @@ def add_product(product):
         strengths= product.strengths
     )
     
-    for p in products:
-         if p.name.lower() == new_product.name.lower():
-            raise InvalidInputException("Product name already exists")
-    
     products.append(new_product)
+    logger.info(f"[{request_id}] Product is successfully added to the database")
+
     return new_product
 
 def search_products(name: str):
