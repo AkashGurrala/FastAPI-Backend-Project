@@ -1,15 +1,8 @@
 from app.api.routes import products
 from app.logic import sort_products
 from app.core.logger import logger
-from app.schemas.product_schema import Product
-from app.data.store import products
-
-class NoProductFoundException(Exception):
-    pass
-
-class InvalidInputException(Exception):
-    pass
-
+from app.data.store import products, product_by_id, count_products, add_product, search_products
+from app.services.exceptions import InvalidInputException, NoProductFoundException
 
 def get_singleproduct_by_id(request_id, id):
 
@@ -20,11 +13,11 @@ def get_singleproduct_by_id(request_id, id):
         logger.warning('id should be equal to or greater than one.')
         raise InvalidInputException("Invalid id recieved. id should be equal to or greater than one.")
 
-    for product in products:
-        if product.id==id:
-            return product
-
-    raise NoProductFoundException("No product found")
+    result = product_by_id(id)
+    if not result:
+        raise NoProductFoundException("No product found")
+    
+    return result
 
 def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, offset):
 
@@ -52,42 +45,21 @@ def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, 
     return filtered
 
 def products_count(request_id):
-    count = len(products)
+    count = count_products()
     logger.info(f"[{request_id}] Count: {count}")
     return {"count": count}
 
 def create_product(request_id, product):
     
     logger.info(f"[{request_id}] Adding new product")
-    product_list = products
-
-    if not product_list:
-        new_id = 1
-    else:
-        new_id= max(p.id for p in product_list) + 1
-
-    new_product = Product(
-        id = new_id,
-        name = product.name,
-        strengths = product.strengths)
-    
-    for p in products:
-        if p.name.lower() == new_product.name.lower():
-            raise InvalidInputException("Product name already exists")
-
-    products.append(new_product)
-    logger.info(f"[{request_id}] Product is created with id = {new_id}")
+    new_product = add_product(product)
     return new_product
 
 
 def products_search(request_id, name):
     logger.info(f"[{request_id}] Searching all products that include '{name}' in the name")
 
-    search_list= []
-    for p in products:
-        if name.lower() in p.name.lower():
-            search_list.append(p)
-    
+    search_list= search_products(name)
     if not search_list:
         raise NoProductFoundException(f"No product found with name: {name}")
     

@@ -2,7 +2,6 @@ from fastapi import APIRouter, Query, Path, Request
 from app.schemas.product_schema import BaseResponse, ProductCreate
 from app.services.product_service import get_filtered_products, get_singleproduct_by_id, products_count, create_product, products_search
 from app.core.logger import logger
-from app.data.store import products
 
 router = APIRouter()
 

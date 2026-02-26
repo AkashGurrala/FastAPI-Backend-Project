@@ -1,9 +1,10 @@
 from typing import List
 from app.schemas.product_schema import Product
+from app.data.store import get_all_products
 
-def sort_products(products: List[Product], min_id: int = None, sort_by_id: bool = False, name_contains: str = None, limit: int = None, offset: int = None) -> List[Product]:
+def sort_products(min_id: int = None, sort_by_id: bool = False, name_contains: str = None, limit: int = None, offset: int = None) -> List[Product]:
    
-    result = products
+    result = get_all_products()
     
     if min_id is not None:
         result = [p for p in result if p.id >= min_id]

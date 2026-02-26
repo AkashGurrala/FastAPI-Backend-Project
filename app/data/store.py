@@ -1,4 +1,5 @@
 from app.schemas.product_schema import Product
+from app.services.exceptions import InvalidInputException
 
 products = [
     Product(id=1, name = 'Erwin Smith', strengths='Leadership and Conviction'),
@@ -8,3 +9,41 @@ products = [
     Product(id=5, name = 'Gojo Satoru', strengths = 'The Strongest'),
     Product(id=6, name = 'Tsukasa', strengths = 'Strength and Skilled Fighter')
 ]
+
+def get_all_products():
+    return products
+
+
+def product_by_id(id: int):
+    
+    product = [p for p in products if p.id == id]
+    return product
+
+def count_products():
+    count = len(products)
+    return count
+
+def add_product(product):
+    
+    new_id=len(products)+1
+    new_product = Product(
+        id = new_id,
+        name = product.name,
+        strengths= product.strengths
+    )
+    
+    for p in products:
+         if p.name.lower() == new_product.name.lower():
+            raise InvalidInputException("Product name already exists")
+    
+    products.append(new_product)
+    return new_product
+
+def search_products(name: str):
+    
+    search_list=[]
+    for p in products:
+        if name in p.name:
+            search_list.append(p)
+
+    return search_list
