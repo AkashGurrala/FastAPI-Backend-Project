@@ -1,6 +1,5 @@
 from typing import List
 from app.schemas.product_schema import Product
-from app.data.store import get_all_products
 
 def sort_products(all_products, min_id: int = None, sort_by_id: bool = False, name_contains: str = None, limit: int = None, offset: int = None) -> List[Product]:
    

@@ -1,4 +1,3 @@
-import os
 from fastapi  import APIRouter
 from datetime import datetime
 from app.core.config import ENV
