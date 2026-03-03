@@ -3,3 +3,6 @@ class NoProductFoundException(Exception):
 
 class InvalidInputException(Exception):
     pass
+
+class DuplicateProductException(Exception):
+    pass

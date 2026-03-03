@@ -1,5 +1,3 @@
-from itertools import product
-from unittest import result
 from app.schemas.product_schema import Product
 from app.core.logger import logger
 from app.db.connection import get_db_connection
@@ -7,6 +5,8 @@ from app.db.connection import get_db_connection
 # Current: In-memory store (temporary)
 # Next: Will be replaced by postgreSQL queries
 
+def raw_info_to_product(row):
+    return Product(id = row[0], name = row[1], strengths = row[2])
 
 def get_all_products():
     try:
@@ -15,23 +15,18 @@ def get_all_products():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM products;')
-        rows = cursor.fetchall()
+        product_list = cursor.fetchall()
         result = []
-        for row in rows:
-            product = Product(
-                id= row[0],
-                name= row[1],
-                strengths= row[2]
-            )
+        for row in product_list:
+            product = raw_info_to_product(row)
             result.append(product)
-        print("Database Fetch Successful")
+        logger.info("Database operation successfull")
         return result
-    
+
     except Exception as e:
-        print("Database operation failed: ", str(e))
-        print("Since DB operation is failed, using in-memory list to commplete operation")
-        return products
-    
+        logger.error("Database Operation Failed:", str(e))
+        raise
+
     finally:
         if cursor:
             cursor.close()
@@ -47,13 +42,15 @@ def product_by_id(id: int):
         cursor=conn.cursor()
 
         cursor.execute('SELECT * FROM products where id=%s;', (id,))
-        result=cursor.fetchall()
-        print("Database operation successful:")
+        result=cursor.fetchone()
+        if result is not None:
+            result = raw_info_to_product(result)
+        logger.info("Database operation successful:")
         return result
     
     except Exception as e:
-        print("Database Operation Failed:", str(e))
-        return []
+        logger.error("Database Operation Failed:", str(e))
+        raise
     
     finally:
         if cursor:
@@ -73,8 +70,8 @@ def product_by_name(name):
         return result
     
     except Exception as e:
-        print("Database Operation Failed:", str(e))
-        return []
+        logger.info("Database Operation Failed:", str(e))
+        raise
     
     finally:
         if cursor:
@@ -96,7 +93,7 @@ def count_products():
     
     except Exception as e:
         logger.error("Database Operation Failed:", str(e))
-        return []
+        raise
     
     finally:
         if cursor:
@@ -111,21 +108,17 @@ def add_product(product):
         cursor = None
         conn=get_db_connection()
         cursor=conn.cursor()
-        cursor.execute("INSERT INTO products (name, strengths) values (%s,%s);",(product.name, product.strenghts))
+        cursor.execute("INSERT INTO products (name, strengths) values (%s,%s);",(product.name, product.strengths))
         conn.commit()
         cursor.execute("SELECT * FROM products WHERE name = %s", (product.name,))
         result = cursor.fetchone()
-        result = Product(
-            id = result[0],
-            name = result[1],
-            strengths = result[2] 
-        )
-        print("Database operation successful:")
+        result = raw_info_to_product(result)
+        logger.info("Database operation successful:")
         return result
     
     except Exception as e:
-        print("Database Operation Failed:", str(e))
-        return []
+        logger.error("Database Operation Failed:", str(e))
+        raise
     
     finally:
         if cursor:
@@ -142,21 +135,17 @@ def search_products(name: str):
 
         cursor.execute("SELECT * FROM products where name ilike %s;", (f"%{name}%",))
         product_list=cursor.fetchall()
-        print("Database fetch successful:")
+        logger.info("Database fetch successful:")
         result=[]
-        for row in product_list:
-            product = Product(
-                id = row[0],
-                name = row[1],
-                strengths = row[2]
-            )
-            result.append(product)
-
+        if product_list is not None:
+            for row in product_list:
+                product = raw_info_to_product(row)
+                result.append(product)
         return result
     
     except Exception as e:
-        print("Database Operation Failed:", str(e))
-        return []
+        logger.error("Database Operation Failed:", str(e))
+        raise
     
     finally:
         if cursor:

@@ -1,7 +1,7 @@
 from app.logic import sort_products
 from app.core.logger import logger
 from app.data.store import get_all_products, product_by_id, count_products, add_product, search_products
-from app.services.exceptions import InvalidInputException, NoProductFoundException
+from app.services.exceptions import InvalidInputException, NoProductFoundException, DuplicateProductException
 
 def get_singleproduct_by_id(request_id, id):
 
@@ -37,12 +37,14 @@ def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, 
     all_products = get_all_products()
 
     filtered = sort_products(all_products, min_id, sort_by_id, name_contains, limit, offset)
-    
+
     logger.info(f"[{request_id}] {len(filtered)} products returned")
     return filtered
 
 def products_count(request_id):
     count = count_products()
+    if count is None:
+        count = 0
     logger.info(f"[{request_id}] Count: {count}")
     return {"count": count}
 
@@ -50,10 +52,10 @@ def create_product(request_id, product):
     
     logger.info(f"[{request_id}] Adding new product")
     products_list = get_all_products()
-    product.name = product.name.strip()
+#    product.name = product.name.strip()
     for p in products_list:
         if p.name.lower() == product.name.lower():
-            raise InvalidInputException("Product name already exists")
+            raise DuplicateProductException("Product name already exists")
 
     new_product = add_product(product)
     return new_product
@@ -64,6 +66,6 @@ def products_search(request_id, name):
 
     search_list= search_products(name)
     if not search_list:
-        raise NoProductFoundException(f"No product found with name: {name}")
+        logger.info(f"No product found with name: {name}")
     
     return search_list
