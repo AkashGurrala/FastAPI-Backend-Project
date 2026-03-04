@@ -1,6 +1,8 @@
+import psycopg2
 from app.schemas.product_schema import Product
 from app.core.logger import logger
 from app.db.connection import get_db_connection
+from app.services.exceptions import DatabaseOperationException, DuplicateProductException
 
 # Current: In-memory store (temporary)
 # Next: Will be replaced by postgreSQL queries
@@ -8,7 +10,7 @@ from app.db.connection import get_db_connection
 def raw_info_to_product(row):
     return Product(id = row[0], name = row[1], strengths = row[2])
 
-def get_all_products():
+def get_all_products(request_id):
     try:
         conn = None
         cursor = None
@@ -23,9 +25,9 @@ def get_all_products():
         logger.info("Database operation successfull")
         return result
 
-    except Exception as e:
-        logger.error("Database Operation Failed:", str(e))
-        raise
+    except psycopg2.Error as e:
+        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        raise DatabaseOperationException("Database Operation Failed")
 
     finally:
         if cursor:
@@ -34,7 +36,7 @@ def get_all_products():
             conn.close()
 
 
-def product_by_id(id: int):
+def product_by_id(request_id, id: int):
     try:
         conn = None
         cursor = None
@@ -48,9 +50,9 @@ def product_by_id(id: int):
         logger.info("Database operation successful:")
         return result
     
-    except Exception as e:
-        logger.error("Database Operation Failed:", str(e))
-        raise
+    except psycopg2.Error as e:
+        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        raise DatabaseOperationException("Database Operation Failed")
     
     finally:
         if cursor:
@@ -79,7 +81,7 @@ def product_by_name(name):
         if conn:
             conn.close()
 '''
-def count_products():
+def count_products(request_id):
     try:
         conn = None
         cursor = None
@@ -91,9 +93,9 @@ def count_products():
         logger.info("Database operation successful:")
         return result
     
-    except Exception as e:
-        logger.error("Database Operation Failed:", str(e))
-        raise
+    except psycopg2.Error as e:
+        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        raise DatabaseOperationException("Database Operation Failed")
     
     finally:
         if cursor:
@@ -101,24 +103,27 @@ def count_products():
         if conn:
             conn.close()
 
-def add_product(product):
+def add_product(request_id, product):
 
     try:
         conn = None
         cursor = None
         conn=get_db_connection()
         cursor=conn.cursor()
-        cursor.execute("INSERT INTO products (name, strengths) values (%s,%s);",(product.name, product.strengths))
+        cursor.execute("INSERT INTO products (name, strengths) values (%s,%s) RETURNING id, name, strengths;",(product.name, product.strengths))
         conn.commit()
-        cursor.execute("SELECT * FROM products WHERE name = %s", (product.name,))
         result = cursor.fetchone()
         result = raw_info_to_product(result)
         logger.info("Database operation successful:")
         return result
     
-    except Exception as e:
-        logger.error("Database Operation Failed:", str(e))
-        raise
+    except psycopg2.IntegrityError as e:
+        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        raise DuplicateProductException(f"Product name: '{product.name}' already exists.")
+
+    except psycopg2.Error as e:
+        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        raise DatabaseOperationException("Database Operation Failed")
     
     finally:
         if cursor:
@@ -126,7 +131,7 @@ def add_product(product):
         if conn:
             conn.close()
 
-def search_products(name: str):
+def search_products(request_id, name: str):
     try:
         conn = None
         cursor = None
@@ -143,9 +148,9 @@ def search_products(name: str):
                 result.append(product)
         return result
     
-    except Exception as e:
-        logger.error("Database Operation Failed:", str(e))
-        raise
+    except psycopg2.Error as e:
+        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        raise DatabaseOperationException("Database Operation Failed")
     
     finally:
         if cursor:

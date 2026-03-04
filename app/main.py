@@ -3,12 +3,21 @@ from app.api.routes import products, health
 from app.core.logger import logger
 import time
 from fastapi.responses import JSONResponse
-from app.services.exceptions import InvalidInputException, NoProductFoundException, DuplicateProductException
+from app.services.exceptions import DatabaseOperationException, InvalidInputException, NoProductFoundException, DuplicateProductException
 import traceback
 import uuid
 
 
 app = FastAPI()
+
+app.include_router(products.router)
+app.include_router(health.router)
+
+logger.info("App started")
+
+@app.get("/")
+def greet():
+    return "Hey there!"
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -59,11 +68,10 @@ async def duplicate_product_exception(request: Request, exc: DuplicateProductExc
         content = {"detail": str(exc)}
     )
 
-app.include_router(products.router)
-app.include_router(health.router)
+@app.exception_handler(DatabaseOperationException)
+async def database_operation_exception(request: Request, exc: DatabaseOperationException):
+    return JSONResponse(
+        status_code = 500,
+        content = {"detail": str(exc)}
+    )
 
-logger.info("App started")
-
-@app.get("/")
-def greet():
-    return "Hey there!"

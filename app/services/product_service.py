@@ -1,7 +1,7 @@
 from app.logic import sort_products
 from app.core.logger import logger
 from app.data.store import get_all_products, product_by_id, count_products, add_product, search_products
-from app.services.exceptions import InvalidInputException, NoProductFoundException, DuplicateProductException
+from app.services.exceptions import InvalidInputException, NoProductFoundException
 
 def get_singleproduct_by_id(request_id, id):
 
@@ -12,7 +12,7 @@ def get_singleproduct_by_id(request_id, id):
         logger.warning('id should be equal to or greater than one.')
         raise InvalidInputException("Invalid id recieved. id should be equal to or greater than one.")
 
-    result = product_by_id(id)
+    result = product_by_id(request_id, id)
     if not result:
         raise NoProductFoundException("No product found")
     
@@ -34,7 +34,7 @@ def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, 
         logger.warning("Invalid offset value recieved")
         raise InvalidInputException("Invalid offset value recieved. Offset value must be equal to or greater than 0")
 
-    all_products = get_all_products()
+    all_products = get_all_products(request_id)
 
     filtered = sort_products(all_products, min_id, sort_by_id, name_contains, limit, offset)
 
@@ -51,20 +51,23 @@ def products_count(request_id):
 def create_product(request_id, product):
     
     logger.info(f"[{request_id}] Adding new product")
-    products_list = get_all_products()
-#    product.name = product.name.strip()
-    for p in products_list:
-        if p.name.lower() == product.name.lower():
-            raise DuplicateProductException("Product name already exists")
-
-    new_product = add_product(product)
-    return new_product
+    product.name = " ".join(product.name.split())
+    product.strengths = " ".join(product.strengths.split())
+    product = add_product(request_id, product)
+    return product
 
 
 def products_search(request_id, name):
+    name = name.strip()
     logger.info(f"[{request_id}] Searching all products that include '{name}' in the name")
 
-    search_list= search_products(name)
+    if name == "":
+        raise InvalidInputException(
+            "Empty spaces or no input are considered Invalid. Please provide appropriate input."
+            )
+
+    search_list = search_products(request_id, name)
+
     if not search_list:
         logger.info(f"No product found with name: {name}")
     

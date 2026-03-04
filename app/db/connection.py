@@ -4,7 +4,7 @@ import psycopg2
 DB_CONFIG = {
     "dbname": "fastapi_backend_db",
     "user": "fastapi_user",
-    "password": "fastapi_user",
+    "password": "password",
     "host":"localhost",
     "port": "5432"
 }
