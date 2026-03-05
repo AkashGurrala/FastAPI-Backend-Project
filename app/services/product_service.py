@@ -1,6 +1,5 @@
-from app.logic import sort_products
 from app.core.logger import logger
-from app.data.store import get_all_products, product_by_id, count_products, add_product, search_products
+from app.data.store import product_by_id, count_products, add_product, search_products, get_products
 from app.services.exceptions import InvalidInputException, NoProductFoundException
 
 def get_singleproduct_by_id(request_id, id):
@@ -13,7 +12,7 @@ def get_singleproduct_by_id(request_id, id):
         raise InvalidInputException("Invalid id recieved. id should be equal to or greater than one.")
 
     result = product_by_id(request_id, id)
-    if not result:
+    if result is None:
         raise NoProductFoundException("No product found")
     
     return result
@@ -34,19 +33,18 @@ def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, 
         logger.warning("Invalid offset value recieved")
         raise InvalidInputException("Invalid offset value recieved. Offset value must be equal to or greater than 0")
 
-    all_products = get_all_products(request_id)
+    if name_contains:   
+        name_contains = " ".join(name_contains.split())
 
-    filtered = sort_products(all_products, min_id, sort_by_id, name_contains, limit, offset)
+    filtered = get_products(request_id, min_id, sort_by_id, name_contains, limit, offset)
 
     logger.info(f"[{request_id}] {len(filtered)} products returned")
     return filtered
 
 def products_count(request_id):
-    count = count_products()
-    if count is None:
-        count = 0
+    count = count_products(request_id)
     logger.info(f"[{request_id}] Count: {count}")
-    return {"count": count}
+    return count
 
 def create_product(request_id, product):
     

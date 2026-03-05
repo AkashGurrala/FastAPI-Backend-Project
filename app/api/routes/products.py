@@ -15,7 +15,8 @@ def get_product_count(request: Request):
     count = products_count(request_id)
 
     return {"status": "success",
-            "data" : count}
+            "data" : {"Count":  count}
+            }
 
 
 @router.get("/products/search", response_model = BaseResponse)
@@ -24,7 +25,6 @@ def search_products(request: Request, name: str):
     search_list = products_search(request_id, name)
     return{"status": "Product(s) found successfully",
             "data": search_list}
-
 
 @router.get(
     "/products",
@@ -50,7 +50,6 @@ def get_products(
     return {"status": "success",
             "data": filtered}
 
-
 @router.get('/products/{id}', responses={ 404: {"description": "Record not found"}})
 def get_product_by_id(request: Request, id: int = Path(description="The unique ID of the product to retrieve")):
     request_id = request.state.request_id
@@ -58,7 +57,6 @@ def get_product_by_id(request: Request, id: int = Path(description="The unique I
     product = get_singleproduct_by_id(request_id, id)
     return {"status": "success",
             "data": product}
-
 
 @router.post("/products", response_model=BaseResponse)
 def create_new_product(request : Request, product : ProductCreate):
