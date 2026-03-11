@@ -66,7 +66,7 @@ def search_products(request_id, name: str):
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM products WHERE name ILIKE %s OR strengths ILIKE %s ;", (f"%{name}%",))
+                cursor.execute("SELECT * FROM products WHERE name ILIKE %s OR strengths ILIKE %s ;", (f"%{name}%", f"%{name}%"))
                 product_list=cursor.fetchall()
                 logger.info(f"[{request_id}] Database fetch successful:")
                 result = [raw_info_to_product(row) for row in product_list]
