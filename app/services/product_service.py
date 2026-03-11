@@ -28,6 +28,10 @@ def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, 
     if limit is not None and limit < 1:
         logger.warning("Invalid Limit value recieved")
         raise InvalidInputException("Invalid limit value recieved. Limit value must be equal to or greater than 1")
+    
+    if limit is not None and limit > 100:
+        logger.warning("Limit value exceeds maximum allowed (100)")
+        raise InvalidInputException("Limit value exceeds 100. Limit value must be less than or equal to 100.")
 
     if offset is not None and offset < 0:
         logger.warning("Invalid offset value recieved")

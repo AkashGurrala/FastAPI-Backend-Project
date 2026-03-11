@@ -11,65 +11,47 @@ from typing import List
 def raw_info_to_product(row):
     return Product(id = row[0], name = row[1], strengths = row[2])
 
+
 def product_by_id(request_id, id: int):
     try:
-        conn = None
-        cursor = None
-        conn=get_db_connection()
-        cursor=conn.cursor()
-
-        cursor.execute('SELECT * FROM products where id=%s;', (id,))
-        result=cursor.fetchone()
-        if result is not None:
-            result = raw_info_to_product(result)
-        logger.info("Database operation successful:")
-        return result
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT * FROM products where id=%s;', (id,))
+                result=cursor.fetchone()
+                if result is not None:
+                    result = raw_info_to_product(result)
+                logger.info(f"[{request_id}] Database fetch successful:")
+                return result
     
     except psycopg2.Error as e:
         logger.error(f"[{request_id}] Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
-    
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+
 
 def count_products(request_id):
     try:
-        conn = None
-        cursor = None
-        conn=get_db_connection()
-        cursor=conn.cursor()
-
-        cursor.execute('SELECT COUNT (*) FROM products;')
-        result=cursor.fetchone()[0]
-        logger.info("Database operation successful:")
-        return result
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT COUNT (*) FROM products;')
+                result=cursor.fetchone()[0]
+                logger.info(f"[{request_id}] Database operation successful:")
+                return result
     
     except psycopg2.Error as e:
         logger.error(f"[{request_id}] Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
-    
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+
 
 def add_product(request_id, product):
 
     try:
-        conn = None
-        cursor = None
-        conn=get_db_connection()
-        cursor=conn.cursor()
-        cursor.execute("INSERT INTO products (name, strengths) values (%s,%s) RETURNING id, name, strengths;",(product.name, product.strengths))
-        conn.commit()
-        result = cursor.fetchone()
-        result = raw_info_to_product(result)
-        logger.info("Database operation successful:")
-        return result
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("INSERT INTO products (name, strengths) values (%s,%s) RETURNING id, name, strengths;",(product.name, product.strengths))
+                result = cursor.fetchone()
+                result = raw_info_to_product(result)
+                logger.info(f"[{request_id}] Database operation successful:")
+                return result
     
     except psycopg2.IntegrityError as e:
         logger.error(f"[{request_id}] Database Operation Failed: {e}")
@@ -78,39 +60,22 @@ def add_product(request_id, product):
     except psycopg2.Error as e:
         logger.error(f"[{request_id}] Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
-    
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+
 
 def search_products(request_id, name: str):
     try:
-        conn = None
-        cursor = None
-        conn=get_db_connection()
-        cursor=conn.cursor()
-
-        cursor.execute("SELECT * FROM products where name ilike %s;", (f"%{name}%",))
-        product_list=cursor.fetchall()
-        logger.info("Database fetch successful:")
-        result=[]
-        if product_list is not None:
-            for row in product_list:
-                product = raw_info_to_product(row)
-                result.append(product)
-        return result
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM products WHERE name ILIKE %s OR strengths ILIKE %s ;", (f"%{name}%",))
+                product_list=cursor.fetchall()
+                logger.info(f"[{request_id}] Database fetch successful:")
+                result = [raw_info_to_product(row) for row in product_list]
+                return result
     
     except psycopg2.Error as e:
         logger.error(f"[{request_id}] Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
-    
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+
 
 def get_products(
     request_id, 
@@ -121,48 +86,36 @@ def get_products(
     offset: int = None) -> List[Product]:
 
     try:
-        conn = None
-        cursor = None
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                query = "SELECT id, name, strengths FROM products WHERE 1=1"
+                params = []
 
-        query = "SELECT id, name, strengths FROM products WHERE 1=1"
-        params = []
+                if min_id is not None:
+                    query += " AND id > =%s"
+                    params.append(min_id)
 
-        if min_id is not None:
-            query += " AND id >= %s"
-            params.append(min_id)
+                if name_contains:
+                    query += " AND name ilike %s"
+                    params.append(f"%{name_contains}%")
+                
+                if sort_by_id:
+                    query += " ORDER BY id"
 
-        if name_contains:
-            query += " AND name ilike %s"
-            params.append(f"%{name_contains}%")
-        
-        if sort_by_id:
-            query += " ORDER BY id"
+                if limit is not None:
+                    query += " LIMIT %s"
+                    params.append(limit)
 
-        if limit is not None:
-            query += " LIMIT %s"
-            params.append(limit)
+                if offset is not None:
+                    query += " OFFSET %s"
+                    params.append(offset)
 
-        if offset is not None:
-            query += " OFFSET %s"
-            params.append(offset)
-
-        cursor.execute(query, params)
-        product_list = cursor.fetchall()
-        logger.info(f"[{request_id}] Database fetch successful")
-        result= []
-        for row in product_list:
-            result.append(raw_info_to_product(row))
-        
-        return result
+                cursor.execute(query, params)
+                product_list = cursor.fetchall()
+                logger.info(f"[{request_id}] Database fetch successful")
+                result = [raw_info_to_product(row) for row in product_list]
+                return result
 
     except psycopg2.Error as e:
         logger.error(f"[{request_id}] Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
-
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
