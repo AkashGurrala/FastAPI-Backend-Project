@@ -20,11 +20,11 @@ def product_by_id(request_id, id: int):
                 result=cursor.fetchone()
                 if result is not None:
                     result = raw_info_to_product(result)
-                logger.info(f"[{request_id}] Database fetch successful:")
+                logger.info(f"[{request_id}] Store: Database Fetch Successful:")
                 return result
     
     except psycopg2.Error as e:
-        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
 
 
@@ -34,11 +34,11 @@ def count_products(request_id):
             with conn.cursor() as cursor:
                 cursor.execute('SELECT COUNT (*) FROM products;')
                 result=cursor.fetchone()[0]
-                logger.info(f"[{request_id}] Database operation successful:")
+                logger.info(f"[{request_id}] Store: Database Fetch Successful:")
                 return result
     
     except psycopg2.Error as e:
-        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
 
 
@@ -50,15 +50,15 @@ def add_product(request_id, product):
                 cursor.execute("INSERT INTO products (name, strengths) values (%s,%s) RETURNING id, name, strengths;",(product.name, product.strengths))
                 result = cursor.fetchone()
                 result = raw_info_to_product(result)
-                logger.info(f"[{request_id}] Database operation successful:")
+                logger.info(f"[{request_id}] Store: Database Insert Successful:")
                 return result
     
     except psycopg2.IntegrityError as e:
-        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DuplicateProductException(f"Product name: '{product.name}' already exists.")
 
     except psycopg2.Error as e:
-        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
 
 
@@ -68,12 +68,12 @@ def search_products(request_id, name: str):
             with conn.cursor() as cursor:
                 cursor.execute("SELECT * FROM products WHERE name ILIKE %s OR strengths ILIKE %s ;", (f"%{name}%", f"%{name}%"))
                 product_list=cursor.fetchall()
-                logger.info(f"[{request_id}] Database fetch successful:")
+                logger.info(f"[{request_id}] Store: Database Fetch Successful:")
                 result = [raw_info_to_product(row) for row in product_list]
                 return result
     
     except psycopg2.Error as e:
-        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
 
 
@@ -117,10 +117,10 @@ def get_products(
 
                 cursor.execute(query, params)
                 product_list = cursor.fetchall()
-                logger.info(f"[{request_id}] Database fetch successful")
+                logger.info(f"[{request_id}] Store: Database Fetch Successful")
                 result = [raw_info_to_product(row) for row in product_list]
                 return result
 
     except psycopg2.Error as e:
-        logger.error(f"[{request_id}] Database Operation Failed: {e}")
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
