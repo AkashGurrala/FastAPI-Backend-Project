@@ -39,13 +39,14 @@ def get_products(
     min_id: int = Query(default=None, description = "Returns records that are equal to or greater than the min id"),
     sort_by_id: bool = Query(default = False, description = "Returns records sorted in ascending order"),
     name_contains: str = Query(default = None, description = "Returns records that contain name_contains string in it"),
+    strength_contains: str = Query(default = None, description = "Return records that contain strength_contains string in it"),
     limit: int = Query(default = None, description = "Return the no of records as per the limit"),
     offset: int = Query(default = None, description = "Skips the no of records based the offset vaue")
     ):
     
     request_id = request.state.request_id
     logger.info(f"[{request_id}] Route: Fetching products")
-    filtered = get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, offset)
+    filtered = get_filtered_products(request_id, min_id, sort_by_id, name_contains, strength_contains, limit, offset)
 
     return {"status": "success",
             "data": filtered}

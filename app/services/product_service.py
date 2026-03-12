@@ -17,7 +17,7 @@ def get_singleproduct_by_id(request_id, id):
     
     return result
 
-def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, offset):
+def get_filtered_products(request_id, min_id, sort_by_id, name_contains, strength_contains, limit, offset):
 
     logger.info(f"[{request_id}] Service called with min_id={min_id}, sort_by_id={sort_by_id}, name_contains={name_contains}, limit={limit}, offset={offset}")
 
@@ -39,8 +39,11 @@ def get_filtered_products(request_id, min_id, sort_by_id, name_contains, limit, 
 
     if name_contains:   
         name_contains = " ".join(name_contains.split())
+    
+    if strength_contains:
+        strength_contains = " ".join(strength_contains.split())
 
-    filtered = get_products(request_id, min_id, sort_by_id, name_contains, limit, offset)
+    filtered = get_products(request_id, min_id, sort_by_id, name_contains, strength_contains, limit, offset)
 
     logger.info(f"[{request_id}] {len(filtered)} products returned")
     return filtered

@@ -82,6 +82,7 @@ def get_products(
     min_id: int = None, 
     sort_by_id: bool = False, 
     name_contains: str = None, 
+    strength_contains: str = None,
     limit: int = None, 
     offset: int = None) -> List[Product]:
 
@@ -92,12 +93,16 @@ def get_products(
                 params = []
 
                 if min_id is not None:
-                    query += " AND id > =%s"
+                    query += " AND id >= %s"
                     params.append(min_id)
 
                 if name_contains:
                     query += " AND name ilike %s"
                     params.append(f"%{name_contains}%")
+                
+                if strength_contains:
+                    query += " AND strengths ilike %s"
+                    params.append(f"%{strength_contains}%")
                 
                 if sort_by_id:
                     query += " ORDER BY id"
