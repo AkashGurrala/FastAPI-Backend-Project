@@ -5,8 +5,6 @@ from app.db.connection import get_db_connection
 from app.services.exceptions import DatabaseOperationException, DuplicateProductException
 from typing import List
 
-# Current: In-memory store (temporary)
-# Next: Will be replaced by postgreSQL queries
 
 def raw_info_to_product(row):
     return Product(id = row[0], name = row[1], strengths = row[2])
@@ -62,11 +60,11 @@ def add_product(request_id, product):
         raise DatabaseOperationException("Database Operation Failed")
 
 
-def search_products(request_id, name: str):
+def search_products(request_id, string: str):
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM products WHERE name ILIKE %s OR strengths ILIKE %s ;", (f"%{name}%", f"%{name}%"))
+                cursor.execute("SELECT * FROM products WHERE name ILIKE %s OR strengths ILIKE %s ;", (f"%{string}%", f"%{string}%"))
                 product_list=cursor.fetchall()
                 logger.info(f"[{request_id}] Store: Database Fetch Successful:")
                 result = [raw_info_to_product(row) for row in product_list]

@@ -63,19 +63,19 @@ def create_product(request_id, product):
     return product
 
 
-def products_search(request_id, name):
-    name = name.strip()
-    logger.info(f"[{request_id}] Service: Called for searching all products that include '{name}' in the name")
+def products_search(request_id, string):
+    string = " ".join(string.split())
+    logger.info(f"[{request_id}] Service: Called for searching all products that include '{string}' in the row values")
 
-    if name == "":
+    if string == "":
         raise InvalidInputException(
             "Empty spaces or no input are considered Invalid. Please provide appropriate input."
             )
 
-    search_list = search_products(request_id, name)
+    search_list = search_products(request_id, string)
 
     if not search_list:
-        logger.info(f"[{request_id}] No product found with name: {name}")
+        logger.info(f"[{request_id}] Service: No product returned with string {string} in the row values")
     
     logger.info(f"[{request_id}] Service: Returning {len(search_list)} products")
 
