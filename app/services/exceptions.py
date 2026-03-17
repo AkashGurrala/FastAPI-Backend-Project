@@ -9,3 +9,6 @@ class DuplicateProductException(Exception):
 
 class DatabaseOperationException(Exception):
     pass
+
+class BadRequestException(Exception):
+    pass

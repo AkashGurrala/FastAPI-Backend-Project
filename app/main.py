@@ -3,7 +3,7 @@ from app.api.routes import products, health
 from app.core.logger import logger
 import time
 from fastapi.responses import JSONResponse
-from app.services.exceptions import DatabaseOperationException, InvalidInputException, NoProductFoundException, DuplicateProductException
+from app.services.exceptions import BadRequestException, DatabaseOperationException, InvalidInputException, NoProductFoundException, DuplicateProductException
 import traceback
 import uuid
 
@@ -47,15 +47,23 @@ async def global_exception_handler(request: Request, exc: Exception):
         content= {"detail": "Internal Server Crash"}
         )
 
+@app.exception_handler(BadRequestException)
+async def bad_request_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code = 400,
+        content = {"detail": str(exc)}
+    )
+
 @app.exception_handler(InvalidInputException)
 async def invalid_input_exception_handler(request: Request, exc: InvalidInputException):
     return JSONResponse(
-        status_code=400,
+        status_code=422,
         content={"detail": str(exc)}
     )
 
 @app.exception_handler(NoProductFoundException)
 async def product_not_found_exception(request: Request, exc: NoProductFoundException):
+    print("CUSTOM HANDLER TRIGGERED") 
     return JSONResponse(
         status_code=404,
         content={"detail": str(exc)}
@@ -74,4 +82,3 @@ async def database_operation_exception(request: Request, exc: DatabaseOperationE
         status_code = 500,
         content = {"detail": str(exc)}
     )
-

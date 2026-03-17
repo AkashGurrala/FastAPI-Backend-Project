@@ -3,6 +3,7 @@ from app.core.config import DB_CONFIG
 
 def get_db_connection():
     connection = psycopg2.connect(**DB_CONFIG)
+    print("Connecting to DB:", DB_CONFIG["dbname"])
     return connection
 
 def test_db_connection():

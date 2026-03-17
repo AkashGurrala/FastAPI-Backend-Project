@@ -1,6 +1,6 @@
 from app.core.logger import logger
 from app.data.store import product_by_id, count_products, add_product, search_products, get_products
-from app.services.exceptions import InvalidInputException, NoProductFoundException
+from app.services.exceptions import BadRequestException, InvalidInputException, NoProductFoundException
 
 def get_singleproduct_by_id(request_id, id):
 
@@ -9,7 +9,7 @@ def get_singleproduct_by_id(request_id, id):
 
     if id is not None and id < 1:
         logger.warning(f"[{request_id}] id should be equal to or greater than one.")
-        raise InvalidInputException("Invalid id recieved. id should be equal to or greater than one.")
+        raise BadRequestException("Invalid id recieved. id should be equal to or greater than one.")
 
     result = product_by_id(request_id, id)
     if result is None:
@@ -57,8 +57,6 @@ def products_count(request_id):
 def create_product(request_id, product):
     
     logger.info(f"[{request_id}] Service: Adding new product ")
-    product.name = " ".join(product.name.split())
-    product.strengths = " ".join(product.strengths.split())
     product = add_product(request_id, product)
     return product
 

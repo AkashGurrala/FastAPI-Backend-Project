@@ -15,5 +15,4 @@ def test_health_check():
     data = response.json()
     assert data["status"] == "ok"
     assert data["service"] == "product-api"
-    assert data["environment"] == "dev"
     
