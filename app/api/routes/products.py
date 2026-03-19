@@ -15,7 +15,7 @@ def get_product_count(request: Request):
     count = products_count(request_id)
 
     return {"status": "success",
-            "data" : {"Count":  count}}
+            "data" : {"count":  count}}
 
 
 @router.get("/products/search", response_model = BaseResponse)
