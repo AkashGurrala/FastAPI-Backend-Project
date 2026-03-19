@@ -44,40 +44,52 @@ async def global_exception_handler(request: Request, exc: Exception):
     traceback.print_exc()
     return JSONResponse(
         status_code=500,
-        content= {"detail": "Internal Server Crash"}
+        content= {
+            "status": "error",
+            "message": "Internal Server Crash"}
         )
 
 @app.exception_handler(BadRequestException)
 async def bad_request_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code = 400,
-        content = {"detail": str(exc)}
+        content = {
+            "status": "error",
+            "message": str(exc)}
     )
 
 @app.exception_handler(InvalidInputException)
 async def invalid_input_exception_handler(request: Request, exc: InvalidInputException):
     return JSONResponse(
         status_code=422,
-        content={"detail": str(exc)}
+        content={
+            "status": "error",
+            "message": str(exc)}
     )
 
 @app.exception_handler(NoProductFoundException)
 async def product_not_found_exception(request: Request, exc: NoProductFoundException):
     return JSONResponse(
         status_code=404,
-        content={"detail": str(exc)}
+        content={
+            "status": "error",
+            "message": str(exc)}
     )
 
 @app.exception_handler(DuplicateProductException)
 async def duplicate_product_exception(request: Request, exc: DuplicateProductException):
     return JSONResponse(
         status_code = 409,
-        content = {"detail": str(exc)}
+        content = {
+            "status": "error",
+            "message": str(exc)}
     )
 
 @app.exception_handler(DatabaseOperationException)
 async def database_operation_exception(request: Request, exc: DatabaseOperationException):
     return JSONResponse(
         status_code = 500,
-        content = {"detail": str(exc)}
+        content = {
+            "status": "error",
+            "message": str(exc)}
     )

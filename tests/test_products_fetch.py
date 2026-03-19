@@ -31,7 +31,7 @@ def test_fetch_product_by_id_no_product_found():
     assert fetch_response.status_code == 404
 
     res = fetch_response.json()
-    assert "no product found" in res["detail"].lower()
+    assert "no product found" in res["message"].lower()
 
 @pytest.mark.parametrize("invalid_id", [0,-1])
 def test_fetch_product_by_id_invalid_input(invalid_id):

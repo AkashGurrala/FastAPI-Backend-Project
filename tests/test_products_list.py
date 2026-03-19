@@ -44,6 +44,9 @@ def test_get_products_min_id_filter():
     assert id2 in ids
     assert id3 in ids
 
+    response5 = client.get("/products?min_id=abc")
+    assert response5.status_code == 422
+
 def test_get_products_sort_by_id():
     r1 = client.post("/products", json = {"name": "A1 test", "strengths": "AS Test"})
     r2 = client.post("/products", json = {"name": "B1 test", "strengths": "BS Test"})
@@ -137,3 +140,22 @@ def test_get_products_limit_offset():
     paginated = response.json()["data"]
     expected_len = min(limit, max(total_len - offset, 0))
     assert len(paginated) == expected_len
+
+def test_get_products_min_id_limit():
+    r1 = client.post("/products", json = {"name": "A4 test", "strengths": "AS Test"})
+    r2 = client.post("/products", json = {"name": "B4 test", "strengths": "BS Test"})
+    r3 = client.post("/products", json = {"name": "C4 test", "strengths": "CS Test"})
+
+    id1 = r1.json()["data"]["id"]
+    id2 = r2.json()["data"]["id"]
+    id3 = r3.json()["data"]["id"]
+
+    limit = 2
+
+    response = client.get(f"/products?min_id={id2}&limit={limit}")
+    assert response.status_code == 200
+
+    products = response.json()["data"]
+    list_len = len(products)
+    assert list_len == limit
+    assert products[0]["id"] == id2
