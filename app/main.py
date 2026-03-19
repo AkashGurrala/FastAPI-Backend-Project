@@ -63,7 +63,6 @@ async def invalid_input_exception_handler(request: Request, exc: InvalidInputExc
 
 @app.exception_handler(NoProductFoundException)
 async def product_not_found_exception(request: Request, exc: NoProductFoundException):
-    print("CUSTOM HANDLER TRIGGERED") 
     return JSONResponse(
         status_code=404,
         content={"detail": str(exc)}

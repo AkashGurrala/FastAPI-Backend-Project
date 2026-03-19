@@ -23,19 +23,19 @@ def get_filtered_products(request_id, min_id, sort_by_id, name_contains, strengt
 
     if min_id is not None and min_id < 1:
         logger.warning(f"[{request_id}] Invalid min_id value received")
-        raise InvalidInputException("Invalid min_id. Please try again with the approriate min_id value.")
+        raise BadRequestException("Invalid min_id. Please try again with the approriate min_id value.")
     
     if limit is not None and limit < 1:
         logger.warning(f"[{request_id}] Invalid Limit value recieved")
-        raise InvalidInputException("Invalid limit value recieved. Limit value must be equal to or greater than 1")
+        raise BadRequestException("Invalid limit value recieved. Limit value must be equal to or greater than 1")
     
     if limit is not None and limit > 100:
         logger.warning(f"[{request_id}] Limit value exceeds maximum allowed (100)")
-        raise InvalidInputException("Limit value exceeds 100. Limit value must be less than or equal to 100.")
+        raise BadRequestException("Limit value exceeds 100. Limit value must be less than or equal to 100.")
 
     if offset is not None and offset < 0:
         logger.warning(f"[{request_id}] Invalid offset value recieved")
-        raise InvalidInputException("Invalid offset value recieved. Offset value must be equal to or greater than 0")
+        raise BadRequestException("Invalid offset value recieved. Offset value must be equal to or greater than 0")
 
     if name_contains:   
         name_contains = " ".join(name_contains.split())
