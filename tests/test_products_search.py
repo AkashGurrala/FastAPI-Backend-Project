@@ -18,6 +18,5 @@ def test_search_string_contains():
     products = response.json()["data"]
     ids = [p["id"] for p in products]
 
-    assert id1 in ids
-    assert id2 in ids
-    assert id3 not in ids
+    assert len(products) == 2
+    assert set(ids) == {id1, id2}

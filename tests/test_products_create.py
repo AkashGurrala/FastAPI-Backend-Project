@@ -13,6 +13,9 @@ def test_create_product_valid_inputs():
     response = client.post("/products", json = data)
     assert response.status_code == 201
 
+    product = response.json()["data"]
+    assert "id" in product
+
     data = {
         "name": " hi  ",
         "strengths": "oks f"
@@ -20,6 +23,8 @@ def test_create_product_valid_inputs():
     response = client.post ("/products", json = data)
     assert response.status_code == 201
 
+    product = response.json()["data"]
+    assert "id" in product
 
 def test_create_product_dublicate():
 
@@ -30,6 +35,9 @@ def test_create_product_dublicate():
 
     response = client.post("/products", json  = data)
     assert response.status_code == 201
+
+    product = response.json()["data"]
+    assert "id" in product
 
     response = client.post("/products", json = data)
     assert response.status_code == 409
