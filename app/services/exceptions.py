@@ -1,3 +1,12 @@
+#user exceptions:
+class UserDoesNotExistException(Exception):
+    pass
+
+#product exceptions:
+class ProductUnavailableException(Exception):
+    pass
+
+
 class NoProductFoundException(Exception):
     pass
 

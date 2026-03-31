@@ -1,6 +1,6 @@
 from app.core.logger import logger
-from app.data.store import product_by_id, count_products, add_product, search_products, get_products
-from app.services.exceptions import BadRequestException, InvalidInputException, NoProductFoundException
+from app.data.store import get_cart_items_with_product, increase_product_quantity, get_quantity_from_cart, add_product_to_cart, get_cart_id, create_cart, get_product_id_availability, get_user, product_by_id, count_products, add_product, search_products, get_products
+from app.services.exceptions import BadRequestException, InvalidInputException, NoProductFoundException, ProductUnavailableException, UserDoesNotExistException
 
 def get_singleproduct_by_id(request_id, id):
 
@@ -60,7 +60,6 @@ def create_product(request_id, product):
     product = add_product(request_id, product)
     return product
 
-
 def products_search(request_id, string):
     string = " ".join(string.split())
     logger.info(f"[{request_id}] Service: Called for searching all products that include '{string}' in the row values")
@@ -78,3 +77,84 @@ def products_search(request_id, string):
     logger.info(f"[{request_id}] Service: Returning {len(search_list)} products")
 
     return search_list
+
+def add_product_to_cart_items(request_id, product):
+    user_id = 1
+    product_id = product.product_id
+    quantity = product.quantity
+
+    verify_user = get_user(request_id, user_id)
+    if verify_user == None:
+        raise UserDoesNotExistException("given user_id does not exist")
+    
+    cart_id = get_cart_id(request_id, user_id)
+    if cart_id == None:
+        cart_id = create_cart(request_id, user_id)
+
+    verify_product = get_product_id_availability(request_id, product_id)
+    print(verify_product)
+    if verify_product is None:
+        raise NoProductFoundException("product_id does not exist")
+    
+    if not verify_product["is_available"]:
+        raise ProductUnavailableException("product exists but currently unavailable")
+
+    logger.info(f"[{request_id}] Service: Input Verfication Successful. Proceeding with next steps")
+
+    product_quantity = get_quantity_from_cart(request_id, cart_id, product_id)
+
+    if product_quantity is None:
+        cart_item = add_product_to_cart(request_id, cart_id, product_id, quantity)
+    else:
+        new_quantity = product_quantity + quantity
+        if new_quantity <= 0 or new_quantity > 8:
+            raise BadRequestException("quanitity is out of range. quantity should be greater than 0 and less than 8.")
+        cart_item = increase_product_quantity(request_id, cart_id, product_id, new_quantity)
+
+    logger.info(f"[{request_id}] Service: Product is successully added to the cart")
+
+    return cart_item
+
+
+def get_cart_items(request_id, user_id):
+    verify_user = get_user(request_id, user_id)
+    
+    if verify_user == None:
+        raise UserDoesNotExistException("given user_id does not exist")
+    
+    cart_id = get_cart_id(request_id, user_id)
+    if cart_id == None:
+        cart_id = create_cart(request_id, user_id)
+    
+    cart_items = get_cart_items_with_product(request_id, cart_id)
+
+    cart_total_price = 0
+    final_result = []
+
+    for item in cart_items:
+        item_total_price = item["price"] * item["quantity"]
+        cart_total_price += item_total_price
+
+        final_result.append({
+            "cart_item_id": item["cart_item_id"],
+            "product_id": item["product_id"],
+            "product_name": item["product_name"],
+            "price": item["price"],
+            "quantity": item["quantity"],
+            "item_total_price": item_total_price 
+        })
+
+    return {
+        "cart_id": cart_id,
+        "cart_items": final_result,
+        "cart_total_price" : cart_total_price
+    }
+
+def delete_cart_item_from_cart(request_id, cart_item_id, user_id):
+    verify_user = get_user(request_id, user_id)
+    if verify_user == None:
+        raise UserDoesNotExistException("given user_id does not exist")
+    
+    cart_id = get_cart_id(request_id, user_id)
+    if cart_id == None:
+        cart_id = create_cart(request_id, user_id)

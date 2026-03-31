@@ -3,7 +3,7 @@ from app.api.routes import products, health
 from app.core.logger import logger
 import time
 from fastapi.responses import JSONResponse
-from app.services.exceptions import BadRequestException, DatabaseOperationException, InvalidInputException, NoProductFoundException, DuplicateProductException
+from app.services.exceptions import BadRequestException, DatabaseOperationException, InvalidInputException, NoProductFoundException, DuplicateProductException, ProductUnavailableException, UserDoesNotExistException
 import traceback
 import uuid
 
@@ -49,13 +49,34 @@ async def global_exception_handler(request: Request, exc: Exception):
             "message": "Internal Server Crash"}
         )
 
+@app.exception_handler(UserDoesNotExistException)
+async def user_does_not_exist_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code = 404,
+        content={
+            "status": "error",
+            "message": str(exc)
+        }
+    )
+
+@app.exception_handler(ProductUnavailableException)
+async def product_unavailable_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code = 404,
+        content = {
+            "status": "error",
+            "message": str(exc)
+        }
+    )
+
 @app.exception_handler(BadRequestException)
 async def bad_request_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code = 400,
         content = {
             "status": "error",
-            "message": str(exc)}
+            "message": str(exc)
+            }
     )
 
 @app.exception_handler(InvalidInputException)

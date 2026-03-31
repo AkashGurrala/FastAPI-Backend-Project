@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, PositiveInt, field_validator
 from typing import Any
 
 class Product(BaseModel):
@@ -6,9 +6,19 @@ class Product(BaseModel):
     name: str
     strengths: str
 
+class PostCartItem(BaseModel):
+    product_id: PositiveInt
+    quantity: PositiveInt = Field(le = 8)
+
 class BaseResponse(BaseModel):
     status: str
     data: Any
+
+class CartItem(BaseModel):
+    cart_item_id: int
+    cart_id: int
+    product_id: int
+    quantity: int
 
 class ProductCreate(BaseModel):
     name: str = Field(min_length = 1, strict = True)
