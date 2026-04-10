@@ -160,6 +160,48 @@ def add_product_to_cart(request_id, cart_id, product_id, quantity):
         logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed") 
 
+
+def get_quantity_from_cart_items(request_id, cart_id, cart_item_id):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT quantity FROM cart_items WHERE cart_id = %s AND cart_item_id = %s", (cart_id, cart_item_id))
+                result = cursor.fetchone()
+                logger.info(f"[{request_id}] Store: Database Fetch Successful")
+                return result[0] if result else None
+    except psycopg2.Error as e:
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
+        raise DatabaseOperationException("Database Operartion Failed")
+
+
+def delete_all_cart_item_cart(request_id, cart_item_id, cart_id):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("DELETE FROM cart_items where cart_id = %s and cart_item_id = %s", (cart_id, cart_item_id))
+                logger.info(f"[{request_id}] Store: Database Deletion Successful")
+                return True
+    except psycopg2.Error as e:
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
+        raise DatabaseOperationException("Database Operartion Failed")   
+                     
+def update_quantity_in_cart(request_id, cart_item_id, cart_id, quantity):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    UPDATE cart_items
+                    SET quantity = %s
+                    WHERE cart_id = %s AND cart_item_id = %s
+                    RETURNING cart_item_id, cart_id, product_id, quantity;
+                """, (quantity, cart_id, cart_item_id ))
+
+                result = cursor.fetchone()
+                return cart_item_schema(result)
+    except psycopg2.Error as e:
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
+        raise DatabaseOperationException("Database Operartion Failed")
+
 def get_cart_items_with_product(request_id, cart_id):
      try:
         with get_db_connection() as conn:

@@ -1,5 +1,5 @@
 from app.core.logger import logger
-from app.data.store import get_cart_items_with_product, increase_product_quantity, get_quantity_from_cart, add_product_to_cart, get_cart_id, create_cart, get_product_id_availability, get_user, product_by_id, count_products, add_product, search_products, get_products
+from app.data.store import update_quantity_in_cart, delete_all_cart_item_cart, get_quantity_from_cart_items, get_cart_items_with_product, increase_product_quantity, get_quantity_from_cart, add_product_to_cart, get_cart_id, create_cart, get_product_id_availability, get_user, product_by_id, count_products, add_product, search_products, get_products
 from app.services.exceptions import BadRequestException, InvalidInputException, NoProductFoundException, ProductUnavailableException, UserDoesNotExistException
 
 def get_singleproduct_by_id(request_id, id):
@@ -150,11 +150,63 @@ def get_cart_items(request_id, user_id):
         "cart_total_price" : cart_total_price
     }
 
-def delete_cart_item_from_cart(request_id, cart_item_id, user_id):
+def delete_cart_item_from_cart(request_id, cart_item_id, quantity, user_id):
     verify_user = get_user(request_id, user_id)
     if verify_user == None:
         raise UserDoesNotExistException("given user_id does not exist")
     
     cart_id = get_cart_id(request_id, user_id)
     if cart_id == None:
-        cart_id = create_cart(request_id, user_id)
+        raise NoProductFoundException("The cart is empty")
+    
+    get_quantity = get_quantity_from_cart_items(request_id, cart_id, cart_item_id)
+
+    if get_quantity is None:
+        raise NoProductFoundException(f"Item with id={cart_item_id} is not found in the cart.")
+
+    if quantity is not None and quantity > get_quantity:
+        raise BadRequestException("Cannot delete more than existing quantity")
+    
+    
+
+    if quantity is None:
+        result = delete_all_cart_item_cart(request_id, cart_item_id, cart_id)
+    else:
+        new_quantity = get_quantity - quantity
+        if new_quantity == 0:
+            result = delete_all_cart_item_cart(request_id, cart_item_id, cart_id)
+        else:
+            result = update_quantity_in_cart(request_id, cart_item_id, cart_id, new_quantity)
+    
+    if result:
+        result = "deletion successful"
+    else:
+        result = "deletion failed"
+
+    return {
+        "deletion status": result
+    }
+
+
+def update_cart_item_quantity_service(request_id, cart_item_id, quantity, user_id):
+
+    # 1. validate user
+    user = get_user(request_id, user_id)
+    if user is None:
+        raise UserDoesNotExistException("User does not exist")
+
+    # 2. get cart
+    cart_id = get_cart_id(request_id, user_id)
+    if cart_id is None:
+        raise NoProductFoundException("Cart is empty")
+
+    # 3. check item exists
+    existing_quantity = get_quantity_from_cart_items(request_id, cart_id, cart_item_id)
+
+    if existing_quantity is None:
+        raise NoProductFoundException("Cart item not found")
+
+    # 4. update quantity
+    updated_item = update_quantity_in_cart(request_id, cart_item_id, cart_id, quantity)
+
+    return updated_item

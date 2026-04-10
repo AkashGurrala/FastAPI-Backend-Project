@@ -10,6 +10,9 @@ class PostCartItem(BaseModel):
     product_id: PositiveInt
     quantity: PositiveInt = Field(le = 8)
 
+class UpdateCartItem(BaseModel):
+    quantity: int = Field(gt=0, le=8)
+    
 class BaseResponse(BaseModel):
     status: str
     data: Any

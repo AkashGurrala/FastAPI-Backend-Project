@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Query, Path, Request
-from fastapi.datastructures import Default
-from app.schemas.product_schema import BaseResponse, PostCartItem, ProductCreate
-from app.services.product_service import get_cart_items, get_filtered_products, get_singleproduct_by_id, products_count, create_product, products_search, add_product_to_cart_items
+from app.schemas.product_schema import BaseResponse, PostCartItem, ProductCreate, UpdateCartItem
+from app.services.product_service import update_cart_item_quantity_service, delete_cart_item_from_cart, get_cart_items, get_filtered_products, get_singleproduct_by_id, products_count, create_product, products_search, add_product_to_cart_items
 from app.core.logger import logger
 
 router = APIRouter()
@@ -92,14 +91,35 @@ def add_product_to_cart(request: Request, product: PostCartItem):
     return {"status": "Product added to the cart successfully",
             "data": product_added}
 
-@router.delete(f"/cart/items/{id}", response_model = BaseResponse, status_code = 200)
+@router.delete("/cart/items/{cart_item_id}", response_model = BaseResponse, status_code = 200)
 def delete_cart_item(
     request: Request,
     cart_item_id: int = Path(description="The unique id of the cart item to be deleted. You can view the cart_item_id by triggering GET /cart API."),
-    quantity: int = Query(default = "all")
+    quantity: int | None = Query(default = None)
     ):
     request_id = request.state.request_id
     user_id = 1
     logger.info(f"[{request_id}] Route: Deleting the product from the cart")
-    deleted_cart_item = delete_cart_item_from_cart(request_id, cart_item_id, user_id)
+    deletion_status = delete_cart_item_from_cart(request_id, cart_item_id, quantity, user_id)
+    return {
+        "status": "Product removed from the cart successfully",
+        "data": deletion_status
+        }
 
+@router.patch("/cart/items/{cart_item_id}", response_model=BaseResponse)
+def update_cart_item(
+    request: Request,
+    cart_item_id: int,
+    data: UpdateCartItem
+):
+    request_id = request.state.request_id
+    user_id = 1
+
+    updated_item = update_cart_item_quantity_service(
+        request_id, cart_item_id, data.quantity, user_id
+    )
+
+    return {
+        "status": "Cart item updated successfully",
+        "data": updated_item
+    }
