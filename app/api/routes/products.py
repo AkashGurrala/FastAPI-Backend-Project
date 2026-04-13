@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, Path, Request
-from app.schemas.product_schema import BaseResponse, PostCartItem, ProductCreate, UpdateCartItem
-from app.services.product_service import update_cart_item_quantity_service, delete_cart_item_from_cart, get_cart_items, get_filtered_products, get_singleproduct_by_id, products_count, create_product, products_search, add_product_to_cart_items
+from app.schemas.product_schema import BaseResponse, PostCartItem, UpdateCartItem
+from app.services.product_service import get_products, update_cart_item_quantity_service, delete_cart_item_from_cart, get_cart_items, get_singleproduct_by_id, products_count, add_product_to_cart_items
 from app.core.logger import logger
 
 router = APIRouter()
@@ -16,40 +16,17 @@ def get_product_count(request: Request):
     return {"status": "success",
             "data" : {"count":  count}}
 
-
-@router.get("/products/search", response_model = BaseResponse)
-def search_products(request: Request, string: str):
+@router.get("/products", response_model = BaseResponse)
+def get_products_route(request: Request):
     request_id = request.state.request_id
     logger.info(f"[{request_id}] Route: Fetching products")
-    search_list = products_search(request_id, string)
-    
-    return{"status": "Product(s) found successfully",
-            "data": search_list}
+    products_list = get_products(request_id)
 
-@router.get(
-    "/products",
-    response_model=BaseResponse,
-    responses={
-        400: {"description": "Invalid min_id"},
-        404: {"description": "Record not found"},
-    },
-)
-def get_products(
-    request: Request,
-    min_id: int = Query(default=None, description = "Returns records that are equal to or greater than the min id"),
-    sort_by_id: bool = Query(default = False, description = "Returns records sorted in ascending order"),
-    name_contains: str = Query(default = None, description = "Returns records that contain name_contains string in it"),
-    strength_contains: str = Query(default = None, description = "Return records that contain strength_contains string in it"),
-    limit: int = Query(default = None, description = "Return the no of records as per the limit"),
-    offset: int = Query(default = None, description = "Skips the no of records based the offset vaue")
-    ):
-    
-    request_id = request.state.request_id
-    logger.info(f"[{request_id}] Route: Fetching products")
-    filtered = get_filtered_products(request_id, min_id, sort_by_id, name_contains, strength_contains, limit, offset)
+    return {
+        "status": "success",
+        "data": products_list
+    }
 
-    return {"status": "success",
-            "data": filtered}
 
 @router.get("/cart", response_model = BaseResponse, status_code = 200)
 def get_cart(request: Request):
@@ -64,7 +41,7 @@ def get_cart(request: Request):
     }
 
 
-@router.get('/products/{id}', responses={ 404: {"description": "Record not found"}})
+@router.get('/products/{id}')
 def get_product_by_id(request: Request, id: int = Path(description="The unique ID of the product to retrieve")):
     request_id = request.state.request_id
     logger.info(f"[{request_id}] Route: Fetching product")
@@ -72,15 +49,6 @@ def get_product_by_id(request: Request, id: int = Path(description="The unique I
 
     return {"status": "success",
             "data": product}
-
-@router.post("/products", response_model=BaseResponse, status_code=201)
-def create_new_product(request : Request, product : ProductCreate):
-    request_id = request.state.request_id
-    logger.info(f"[{request_id}] Route: Adding product to the database")
-    new_product=create_product(request_id, product)
-    
-    return {"status": "Product created successfully",
-            "data": new_product}
 
 @router.post("/cart/items", response_model = BaseResponse, status_code = 201)
 def add_product_to_cart(request: Request, product: PostCartItem):

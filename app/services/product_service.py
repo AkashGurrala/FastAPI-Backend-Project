@@ -1,6 +1,15 @@
 from app.core.logger import logger
-from app.data.store import update_quantity_in_cart, delete_all_cart_item_cart, get_quantity_from_cart_items, get_cart_items_with_product, increase_product_quantity, get_quantity_from_cart, add_product_to_cart, get_cart_id, create_cart, get_product_id_availability, get_user, product_by_id, count_products, add_product, search_products, get_products
-from app.services.exceptions import BadRequestException, InvalidInputException, NoProductFoundException, ProductUnavailableException, UserDoesNotExistException
+from app.data.store import get_all_products, update_quantity_in_cart, delete_all_cart_item_cart, get_quantity_from_cart_items, get_cart_items_with_product, increase_product_quantity, get_quantity_from_cart, add_product_to_cart, get_cart_id, create_cart, get_product_id_availability, get_user, product_by_id, count_products
+from app.services.exceptions import BadRequestException, NoProductFoundException, ProductUnavailableException, UserDoesNotExistException
+
+
+def get_products(request_id):
+    logger.info(f"[{request_id}] Service: called with GET /products")
+    product_list = get_all_products(request_id)
+    if product_list is None:
+        logger.info(f"[{request_id}] Service: Product page is empty")
+    
+    return product_list or []
 
 def get_singleproduct_by_id(request_id, id):
 
@@ -17,66 +26,12 @@ def get_singleproduct_by_id(request_id, id):
     
     return result
 
-def get_filtered_products(request_id, min_id, sort_by_id, name_contains, strength_contains, limit, offset):
-
-    logger.info(f"[{request_id}] Service: called with min_id={min_id}, sort_by_id={sort_by_id}, name_contains={name_contains}, streng limit={limit}, offset={offset}")
-
-    if min_id is not None and min_id < 1:
-        logger.warning(f"[{request_id}] Invalid min_id value received")
-        raise BadRequestException("Invalid min_id. Please try again with the approriate min_id value.")
-    
-    if limit is not None and limit < 1:
-        logger.warning(f"[{request_id}] Invalid Limit value recieved")
-        raise BadRequestException("Invalid limit value recieved. Limit value must be equal to or greater than 1")
-    
-    if limit is not None and limit > 100:
-        logger.warning(f"[{request_id}] Limit value exceeds maximum allowed (100)")
-        raise BadRequestException("Limit value exceeds 100. Limit value must be less than or equal to 100.")
-
-    if offset is not None and offset < 0:
-        logger.warning(f"[{request_id}] Invalid offset value recieved")
-        raise BadRequestException("Invalid offset value recieved. Offset value must be equal to or greater than 0")
-
-    if name_contains:   
-        name_contains = " ".join(name_contains.split())
-    
-    if strength_contains:
-        strength_contains = " ".join(strength_contains.split())
-
-    filtered = get_products(request_id, min_id, sort_by_id, name_contains, strength_contains, limit, offset)
-
-    logger.info(f"[{request_id}] Service: Returning {len(filtered)} products")
-    return filtered
-
 def products_count(request_id):
     count = count_products(request_id)
     logger.info(f"[{request_id}] Service: called for count of products")
     logger.info(f"[{request_id}] Count: {count}")
     return count
 
-def create_product(request_id, product):
-    
-    logger.info(f"[{request_id}] Service: Adding new product ")
-    product = add_product(request_id, product)
-    return product
-
-def products_search(request_id, string):
-    string = " ".join(string.split())
-    logger.info(f"[{request_id}] Service: Called for searching all products that include '{string}' in the row values")
-
-    if string == "":
-        raise InvalidInputException(
-            "Empty spaces or no input are considered Invalid. Please provide appropriate input."
-            )
-
-    search_list = search_products(request_id, string)
-
-    if not search_list:
-        logger.info(f"[{request_id}] Service: No product returned with string {string} in the row values")
-    
-    logger.info(f"[{request_id}] Service: Returning {len(search_list)} products")
-
-    return search_list
 
 def add_product_to_cart_items(request_id, product):
     user_id = 1
@@ -92,12 +47,14 @@ def add_product_to_cart_items(request_id, product):
         cart_id = create_cart(request_id, user_id)
 
     verify_product = get_product_id_availability(request_id, product_id)
-    print(verify_product)
     if verify_product is None:
         raise NoProductFoundException("product_id does not exist")
     
     if not verify_product["is_available"]:
         raise ProductUnavailableException("product exists but currently unavailable")
+
+    if quantity <= 0 or quantity > 8:
+        raise BadRequestException("quanitity is out of range. quantity should be greater than 0 and less than 8.")
 
     logger.info(f"[{request_id}] Service: Input Verfication Successful. Proceeding with next steps")
 

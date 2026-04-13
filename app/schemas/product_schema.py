@@ -1,10 +1,5 @@
-from pydantic import BaseModel, Field, PositiveInt, field_validator
+from pydantic import BaseModel, Field, PositiveFloat, PositiveInt, field_validator
 from typing import Any
-
-class Product(BaseModel):
-    id: int
-    name: str
-    strengths: str
 
 class PostCartItem(BaseModel):
     product_id: PositiveInt
@@ -17,12 +12,19 @@ class BaseResponse(BaseModel):
     status: str
     data: Any
 
+class ProductItem(BaseModel):
+    product_id: PositiveInt
+    product_name: str
+    category: str
+    price: PositiveFloat
+
 class CartItem(BaseModel):
     cart_item_id: int
     cart_id: int
     product_id: int
     quantity: int
 
+'''
 class ProductCreate(BaseModel):
     name: str = Field(min_length = 1, strict = True)
     strengths: str = Field(min_length = 4, strict = True)
@@ -39,4 +41,5 @@ class ProductCreate(BaseModel):
         cleaned = " ".join(v.split())
         if cleaned == "":
             raise ValueError("strengths cannot be empty or whitespace")
-        return cleaned
+        return cleaned 
+'''

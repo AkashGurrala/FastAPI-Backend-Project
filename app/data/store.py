@@ -1,29 +1,57 @@
 import psycopg2
-from app.schemas.product_schema import Product, CartItem
+from app.schemas.product_schema import CartItem, ProductItem
 from app.core.logger import logger
 from app.db.connection import get_db_connection
-from app.services.exceptions import DatabaseOperationException, DuplicateProductException
-from typing import List
-
-
-def raw_info_to_product(row):
-    return Product(id = row[0], name = row[1], strengths = row[2])
+from app.services.exceptions import DatabaseOperationException
 
 def cart_item_schema(row):
     return CartItem(cart_item_id = row[0], cart_id = row[1], product_id = row[2], quantity = row[3])
 
+def product_item_schema(row):
+    return ProductItem(product_id = row[0], product_name = row[1], category = row[2], price = row[3])
+
+def get_all_products(request_id):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute('SELECT product_id, product_name, category, price FROM all_products where is_available=true;') 
+                raw_result = cursor.fetchall()
+                if raw_result is not None:
+                    result = []
+                    for row in raw_result:
+                        x = {
+                        "product_id": raw_result[0],
+                        "product_name": raw_result[1],
+                        "category": raw_result[2],
+                        "price": raw_result[3]
+                        }
+                        result.append(x)
+                logger.info(f"[{request_id}] Store: Database Fetch Successful:")
+                return result
+
+    except psycopg2.Error as e:
+        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
+        raise DatabaseOperationException("Database Operation Failed")
 
 def product_by_id(request_id, id: int):
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute('SELECT * FROM products where id=%s;', (id,))
-                result=cursor.fetchone()
-                if result is not None:
-                    result = raw_info_to_product(result)
+                cursor.execute("SELECT product_id, product_name, category, price FROM all_products where is_available=true and product_id=%s;",(id,))
+                raw_result = cursor.fetchone()
+
+                if raw_result is None:
+                    return None
+
+                result = {
+                "product_id": raw_result[0],
+                "product_name": raw_result[1],
+                "category": raw_result[2],
+                "price": raw_result[3]
+                }
                 logger.info(f"[{request_id}] Store: Database Fetch Successful:")
                 return result
-    
+
     except psycopg2.Error as e:
         logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
@@ -33,7 +61,7 @@ def count_products(request_id):
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute('SELECT COUNT (*) FROM products;')
+                cursor.execute('SELECT COUNT (*) FROM all_products;')
                 result=cursor.fetchone()[0]
                 logger.info(f"[{request_id}] Store: Database Fetch Successful:")
                 return result
@@ -42,25 +70,6 @@ def count_products(request_id):
         logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")
 
-
-def add_product(request_id, product):
-
-    try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute("INSERT INTO products (name, strengths) values (%s,%s) RETURNING id, name, strengths;",(product.name, product.strengths))
-                result = cursor.fetchone()
-                result = raw_info_to_product(result)
-                logger.info(f"[{request_id}] Store: Database Insert Successful")
-                return result
-    
-    except psycopg2.IntegrityError as e:
-        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
-        raise DuplicateProductException(f"Product name: '{product.name}' already exists.")
-
-    except psycopg2.Error as e:
-        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
-        raise DatabaseOperationException("Database Operation Failed")
 
 def get_user(request_id, user_id):
     try:
@@ -216,7 +225,8 @@ def get_cart_items_with_product(request_id, cart_id):
                 FROM cart_items ci
                 JOIN all_products p
                     on ci.product_id = p.product_id
-                WHERE ci.cart_id = %s;
+                WHERE ci.cart_id = %s
+                AND p.is_available = true;
                     """
                 cursor.execute(query, (cart_id,))
                 raw_result = cursor.fetchall()
@@ -236,67 +246,3 @@ def get_cart_items_with_product(request_id, cart_id):
      except psycopg2.Error as e:
         logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
         raise DatabaseOperationException("Database Operation Failed")        
-
-
-def search_products(request_id, string: str):
-    try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM products WHERE name ILIKE %s OR strengths ILIKE %s ;", (f"%{string}%", f"%{string}%"))
-                product_list=cursor.fetchall()
-                logger.info(f"[{request_id}] Store: Database Fetch Successful:")
-                result = [raw_info_to_product(row) for row in product_list]
-                return result
-    
-    except psycopg2.Error as e:
-        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
-        raise DatabaseOperationException("Database Operation Failed")
-
-
-def get_products(
-    request_id, 
-    min_id: int = None, 
-    sort_by_id: bool = False, 
-    name_contains: str = None, 
-    strength_contains: str = None,
-    limit: int = None, 
-    offset: int = None) -> List[Product]:
-
-    try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cursor:
-                query = "SELECT id, name, strengths FROM products WHERE 1=1"
-                params = []
-
-                if min_id is not None:
-                    query += " AND id >= %s"
-                    params.append(min_id)
-
-                if name_contains:
-                    query += " AND name ilike %s"
-                    params.append(f"%{name_contains}%")
-                
-                if strength_contains:
-                    query += " AND strengths ilike %s"
-                    params.append(f"%{strength_contains}%")
-                
-                if sort_by_id:
-                    query += " ORDER BY id"
-
-                if limit is not None:
-                    query += " LIMIT %s"
-                    params.append(limit)
-
-                if offset is not None:
-                    query += " OFFSET %s"
-                    params.append(offset)
-
-                cursor.execute(query, params)
-                product_list = cursor.fetchall()
-                logger.info(f"[{request_id}] Store: Database Fetch Successful")
-                result = [raw_info_to_product(row) for row in product_list]
-                return result
-
-    except psycopg2.Error as e:
-        logger.error(f"[{request_id}] Store: Database Operation Failed: {e}")
-        raise DatabaseOperationException("Database Operation Failed")
